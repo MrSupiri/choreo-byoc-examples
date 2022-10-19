@@ -5,6 +5,10 @@ import os
 
 app = Flask(__name__)
 
+@app.route('/')
+def index():
+    return jsonify({'active': True})
+
 @app.route('/healthz/')
 def healthz():
     return jsonify({'healthy': True})
@@ -25,5 +29,5 @@ def proxy():
     return r.text
 
 if __name__ == "__main__":
-    port = int(os.environ.get('PORT', 5000))
+    port = int(os.environ.get('PORT', 9090))
     app.run(debug=True, host='0.0.0.0', port=port)

@@ -1,10 +1,11 @@
 openapi: 3.0.1
 info:
-  title: defaultTitle
-  description: defaultDescription
+  title: Choreo BYOC Examples
+  description: This repository contains demo API implemented in different frameworks to showcase capabilities of choreo.
   version: '0.1'
 servers:
-  - url: http://127.0.0.1:5000
+  - url: http://127.0.0.1:9090
+  - url: https://44eca54d-1333-40be-8ef3-c1701c0fc3a2-dev.e1-us-east-azure.preview-dv.choreoapis.dev/itcu/byocpython/1.0.0
 paths:
   /proxy:
     post:
@@ -35,9 +36,9 @@ paths:
                 type: string
               examples: {}
       servers:
-        - url: http://127.0.0.1:5000
+        - url: http://127.0.0.1:9090
     servers:
-      - url: http://127.0.0.1:5000
+      - url: http://127.0.0.1:9090
   /healthz:
     get:
       description: Auto generated using Swagger Inspector
@@ -56,9 +57,30 @@ paths:
                   value: |
                     {"healthy":true}
       servers:
-        - url: http://127.0.0.1:5000
+        - url: http://127.0.0.1:9090
     servers:
-      - url: http://127.0.0.1:5000
+      - url: http://127.0.0.1:9090
+  /:
+    get:
+      description: Auto generated using Swagger Inspector
+      responses:
+        '200':
+          description: Auto generated using Swagger Inspector
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  healthy:
+                    type: boolean
+              examples:
+                '0':
+                  value: |
+                    {"active":true}
+      servers:
+        - url: http://127.0.0.1:9090
+    servers:
+      - url: http://127.0.0.1:9090
   /hello:
     get:
       description: Auto generated using Swagger Inspector
@@ -77,6 +99,6 @@ paths:
                 type: string
               examples: {}
       servers:
-        - url: http://127.0.0.1:5000
+        - url: http://127.0.0.1:9090
     servers:
-      - url: http://127.0.0.1:5000
+      - url: http://127.0.0.1:9090

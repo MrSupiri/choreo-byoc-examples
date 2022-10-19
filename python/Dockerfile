@@ -8,8 +8,8 @@ RUN pip3 install -r requirements.txt
 
 COPY . .
 
-USER 10016
+USER 10050
 
-EXPOSE 5000
+EXPOSE 9090
 
 CMD ["python", "main.py"]
