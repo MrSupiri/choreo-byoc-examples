@@ -1,0 +1,65 @@
+openapi: 3.0.0
+info:
+  title: Go HTTP Endpoint Aggregator
+  description: |
+    This API accepts a POST request with a JSON payload containing an array of arrays of URLs, 
+    sends a POST request to the first URL with the remaining URLs as the payload, and collects 
+    the responses. It then returns the collected responses in a JSON payload in the same format 
+    as the input request.
+  version: 1.0.0
+servers:
+  - url: https://{endpoint}:{port}
+    description: Local server
+paths:
+  /:
+    post:
+      summary: Aggregate HTTP endpoints
+      description: |
+        Accepts a POST request with a JSON payload containing an array of arrays of URLs, 
+        sends a POST request to the first URL with the remaining URLs as the payload, and collects 
+        the responses. It then returns the collected responses in a JSON payload in the same format 
+        as the input request.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - endpoints
+              properties:
+                endpoints:
+                  type: array
+                  items:
+                    type: array
+                    items:
+                      type: string
+              example:
+                endpoints:
+                  - ["http://localhost:8001/endpoint1", "http://localhost:8002/endpoint2"]
+                  - ["http://localhost:8003/endpoint3"]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - responses
+                properties:
+                  responses:
+                    type: array
+                    items:
+                      type: array
+                      items:
+                        type: string
+              example:
+                responses:
+                  - ["http://localhost:8001/endpoint1", "response1"]
+                  - ["http://localhost:8002/endpoint2", "response2"]
+                  - ["http://localhost:8003/endpoint3", "response3"]
+        '400':
+          description: Bad Request
+        '500':
+          description: Internal Server Error
