@@ -2,9 +2,11 @@ package main
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 )
@@ -18,10 +20,22 @@ type Response struct {
 }
 
 func main() {
-	http.HandleFunc("/", handleRequest)
 	hostName := fmt.Sprintf(":%s", os.Getenv("PORT"))
 	fmt.Println("Listening on", hostName)
-	http.ListenAndServe(hostName, nil)
+
+	os.Setenv("GODEBUG", "http2server=0")
+	os.Setenv("GODEBUG", "http2client=0")
+
+	m := http.NewServeMux()
+	m.HandleFunc("/", handleRequest)
+
+	srv := &http.Server{
+		Handler:      m,
+		Addr:         hostName,
+		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler)),
+	}
+
+	log.Fatal(srv.ListenAndServe())
 }
 
 func handleRequest(w http.ResponseWriter, r *http.Request) {
