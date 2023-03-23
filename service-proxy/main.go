@@ -22,7 +22,7 @@ type Response struct {
 }
 
 func main() {
-	hostName := fmt.Sprintf("localhost:%s", os.Getenv("PORT"))
+	hostName := fmt.Sprintf(":%s", os.Getenv("PORT"))
 	fmt.Println("Listening on", hostName)
 
 	os.Setenv("GODEBUG", "http2server=0")
