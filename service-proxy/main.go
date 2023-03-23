@@ -11,16 +11,18 @@ import (
 	"os"
 )
 
-type Request struct {
-	Endpoints [][]string `json:"endpoints"`
+type Route struct {
+	Designation string  `json:"designation"`
+	Routes      []Route `json:"routes"`
 }
 
 type Response struct {
-	Responses [][]string `json:"responses"`
+	Service  string     `json:"service"`
+	Response []Response `json:"response"`
 }
 
 func main() {
-	hostName := fmt.Sprintf(":%s", os.Getenv("PORT"))
+	hostName := fmt.Sprintf("localhost:%s", os.Getenv("PORT"))
 	fmt.Println("Listening on", hostName)
 
 	os.Setenv("GODEBUG", "http2server=0")
@@ -39,96 +41,80 @@ func main() {
 }
 
 func handleRequest(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	// Read request body
+	// Read the input JSON from the HTTP request body
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		fmt.Println("Error reading request body:", err)
-		w.WriteHeader(http.StatusBadRequest)
+		http.Error(w, "Error reading request body", http.StatusBadRequest)
 		return
 	}
-	fmt.Println("Received request:", string(body))
 
-	// Parse request
-	var req Request
-	err = json.Unmarshal(body, &req)
+	// Unmarshal the input JSON into a Route struct
+	var rootRoute Route
+	err = json.Unmarshal(body, &rootRoute)
 	if err != nil {
-		fmt.Println("Error parsing request:", err)
-		w.WriteHeader(http.StatusBadRequest)
+		http.Error(w, "Error parsing request body", http.StatusBadRequest)
 		return
 	}
+	fmt.Println("Received request ", rootRoute)
 
-	if len(req.Endpoints) == 0 {
-		res := Response{Responses: [][]string{}}
-		// res.Responses = append(res.Responses, []string{"EOF"})
-		resJson, err := json.Marshal(res)
-		if err != nil {
-			fmt.Println("Error marshalling response:", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		w.Write(resJson)
-		return
-	}
+	// Send requests to each service in the input JSON and build the response
+	response := sendRequests(rootRoute)
 
-	// Send requests and collect responses
-	var res Response
-
-	// Send the first URL a POST request with the remaining URLs as the payload
-	payload, err := json.Marshal(Request{Endpoints: req.Endpoints[1:]})
+	// Marshal the response into JSON and send it in the HTTP response body
+	responseJSON, err := json.Marshal(response)
 	if err != nil {
-		fmt.Println("Error marshalling payload:", err)
-		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, "Error creating response", http.StatusInternalServerError)
 		return
 	}
 
-	for i, endpoint := range req.Endpoints[0] {
-		resp, err := http.Post(endpoint, "application/json", ioutil.NopCloser(bytes.NewBuffer(payload)))
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(responseJSON)
+	fmt.Println("Sent response ", response)
+}
+
+func sendRequests(route Route) Response {
+	response := Response{
+		Service:  route.Designation,
+		Response: []Response{},
+	}
+
+	for _, nestedRoute := range route.Routes {
+		// Send a POST request to the service with the nested route information
+		reqBody, err := json.Marshal(nestedRoute)
 		if err != nil {
-			fmt.Println("Error sending request to", endpoint, ":", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
+			fmt.Println("Error creating request body:", err)
+			response.Response = append(response.Response, Response{})
+			continue
 		}
 
+		resp, err := http.Post(nestedRoute.Designation, "application/json", bytes.NewBuffer(reqBody))
+		if err != nil {
+			fmt.Println("Error sending request:", err)
+			response.Response = append(response.Response, Response{Service: nestedRoute.Designation, Response: []Response{}})
+			continue
+		}
 		defer resp.Body.Close()
 
-		// Read the response body
+		// Read the response from the nested service
 		body, err := ioutil.ReadAll(resp.Body)
-
 		if err != nil {
-			fmt.Println("Error reading response from", endpoint, ":", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
+			fmt.Println("Error reading response body:", err)
+			response.Response = append(response.Response, Response{Service: nestedRoute.Designation, Response: []Response{}})
+			continue
 		}
 
-		// Parse the response and add it to the result
-		var response Response
-		_ = json.Unmarshal(body, &response)
-
-		response.Responses = append([][]string{{endpoint}}, response.Responses...)
-
-		if i == 0 {
-			res.Responses = append(res.Responses, response.Responses...)
-		} else {
-			for j, resp := range response.Responses {
-				res.Responses[j] = append(res.Responses[j], resp...)
-			}
+		// Unmarshal the response JSON into a Response struct
+		var nestedResponse Response
+		err = json.Unmarshal(body, &nestedResponse)
+		if err != nil {
+			fmt.Println("Error parsing response body:", err)
+			response.Response = append(response.Response, Response{Service: nestedRoute.Designation, Response: []Response{}})
+			continue
 		}
+
+		// Append the nested response to the current response
+		response.Response = append(response.Response, nestedResponse)
 	}
 
-	// Write response
-	resJson, err := json.Marshal(res)
-	if err != nil {
-		fmt.Println("Error marshalling response:", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	fmt.Println("Sending response:", string(resJson))
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(resJson)
+	return response
 }
