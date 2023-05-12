@@ -1,0 +1,41 @@
+# +required Version of the endpoint configuration YAML
+version: 0.1
+
+# +required List of endpoints to create
+endpoints:
+- name: Frontend Server
+  port: 8080
+  type: REST
+  networkVisibility: Public
+  context: /
+  schemaFilePath: openapi.yaml
+- name: Order Service
+  port: 8080
+  type: REST
+  networkVisibility: Project
+  context: /
+  schemaFilePath: openapi.yaml
+- name: Catalogue Service
+  port: 8080
+  type: REST
+  networkVisibility: Project
+  context: /
+  schemaFilePath: openapi.yaml
+- name: User Service
+  port: 8080
+  type: REST
+  networkVisibility: Project
+  context: /
+  schemaFilePath: openapi.yaml
+- name: Shipping Service
+  port: 8080
+  type: REST
+  networkVisibility: Project
+  context: /
+  schemaFilePath: openapi.yaml
+- name: Payment Service
+  port: 8080
+  type: REST
+  networkVisibility: Project
+  context: /
+  schemaFilePath: openapi.yaml
